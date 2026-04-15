@@ -480,64 +480,97 @@
   }
 
   // =========================================================================
-  // Settings / Branding
+  // Temas (Light / Dark / System)
   // =========================================================================
-  function loadSettings() {
-    try { const raw = localStorage.getItem(STORAGE_SETTINGS); return raw ? JSON.parse(raw) : {}; } catch (e) { return {}; }
-  }
-  function saveSettings(obj) {
-    try { localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(obj)); } catch (e) {}
+  function initTheme() {
+    const btn = document.getElementById("theme-cycle");
+    const label = document.getElementById("theme-cycle-label");
+    if (!btn) return;
+
+    function updateUI(theme) {
+      if (!label) return;
+      if (theme === "light") label.textContent = "Claro";
+      else if (theme === "dark") label.textContent = "Escuro";
+      else label.textContent = "Sistema";
+    }
+
+    let current = localStorage.getItem("theme") || "system";
+    updateUI(current);
+
+    btn.addEventListener("click", () => {
+      if (current === "system") current = "light";
+      else if (current === "light") current = "dark";
+      else current = "system";
+
+      localStorage.setItem("theme", current);
+      document.documentElement.setAttribute("data-theme", current);
+      updateUI(current);
+    });
   }
 
-  function applyBranding() {
-    const s = loadSettings();
-    const title   = document.getElementById("topbar-app-title");
-    const img     = document.getElementById("topbar-logo-img");
-    const svg     = document.getElementById("topbar-logo-svg");
-    const logoHome = document.getElementById("logo-home");
-    const name = (s.companyName && String(s.companyName).trim()) || "Duran Ponce | Compliance";
-    if (title) title.textContent = name;
-    if (logoHome) logoHome.setAttribute("aria-label", name + " — Consulta");
-    if (img && svg) {
-      if (s.logoDataUrl) {
-        img.src = s.logoDataUrl; img.classList.remove("hidden"); svg.classList.add("hidden");
-      } else {
-        img.removeAttribute("src"); img.classList.add("hidden"); svg.classList.remove("hidden");
-      }
+  function initLogout() {
+    const btn = document.getElementById("topbar-logout");
+    if (btn) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.assign(apiUrl("/api/auth/logout"));
+      });
     }
   }
 
+  // =========================================================================
+  // Settings / Autenticação
+  // =========================================================================
   function initSettings() {
-    const s = loadSettings();
-    const elName     = document.getElementById("cfg-company-name");
-    const btnSave    = document.getElementById("cfg-save");
-    const btnClear   = document.getElementById("cfg-logo-clear");
-    const elFile     = document.getElementById("cfg-logo-file");
-    if (elName) elName.value = s.companyName || "";
-    applyBranding();
-    if (btnSave) {
-      btnSave.addEventListener("click", () => {
-        const next = loadSettings();
-        next.companyName = elName ? elName.value.trim() : "";
-        saveSettings(next); applyBranding(); showToast("Configurações salvas.");
-      });
-    }
-    if (btnClear) {
-      btnClear.addEventListener("click", () => {
-        const next = loadSettings(); delete next.logoDataUrl;
-        saveSettings(next); if (elFile) elFile.value = ""; applyBranding(); showToast("Logotipo padrão restaurado.");
-      });
-    }
-    if (elFile) {
-      elFile.addEventListener("change", (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        if (f.size > 900 * 1024) { showToast("Imagem muito grande (máx. ~900 KB).", true); e.target.value = ""; return; }
-        const reader = new FileReader();
-        reader.onload = () => { const next = loadSettings(); next.logoDataUrl = reader.result; saveSettings(next); applyBranding(); showToast("Logotipo atualizado."); };
-        reader.readAsDataURL(f);
-      });
-    }
+    const btnSave = document.getElementById("cfg-save");
+    if (!btnSave) return;
+
+    btnSave.addEventListener("click", async () => {
+      const elUser = document.getElementById("cfg-username");
+      const elPass = document.getElementById("cfg-password");
+      const elConf = document.getElementById("cfg-password-confirm");
+
+      const username = elUser.value.trim();
+      const password = elPass.value;
+      const confirm  = elConf.value;
+
+      if (!username || !password) {
+        showToast("Usuário e senha são obrigatórios.", true);
+        return;
+      }
+      if (password.length < 6) {
+        showToast("A senha deve ter pelo menos 6 caracteres.", true);
+        return;
+      }
+      if (password !== confirm) {
+        showToast("As senhas não coincidem.", true);
+        return;
+      }
+
+      btnSave.disabled = true;
+      try {
+        const res = await fetch(apiUrl("/api/auth/update"), {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          showToast("Credenciais atualizadas! Redirecionando...", false);
+          setTimeout(() => {
+            window.location.assign(apiUrl("/api/auth/logout"));
+          }, 2000);
+        } else {
+          showToast(data.error || "Erro ao atualizar credenciais.", true);
+          btnSave.disabled = false;
+        }
+      } catch (err) {
+        showToast("Erro de rede ao atualizar.", true);
+        btnSave.disabled = false;
+      }
+    });
   }
 
   // =========================================================================
@@ -552,8 +585,6 @@
       logo.setAttribute("href", pagePath("/dashboard"));
       logo.addEventListener("click", (e) => { e.preventDefault(); showView("dashboard"); });
     }
-    const lo = document.getElementById("topbar-logout");
-    if (lo) lo.addEventListener("click", () => window.location.assign(apiUrl("/api/auth/logout")));
     const cfgLogin = document.getElementById("cfg-login-link");
     if (cfgLogin) cfgLogin.setAttribute("href", pagePath("/login"));
   }
@@ -1439,7 +1470,7 @@
       doc.setFont("helvetica", "bold");
       doc.setFontSize(22);
       doc.setTextColor(255, 255, 255);
-      const brandName = (loadSettings().companyName || "Duran Ponce | Compliance").trim();
+      const brandName = "Duran Ponce | Compliance";
       
       const textX = window._cachedLogoBase64 ? marginX + 40 : marginX;
 

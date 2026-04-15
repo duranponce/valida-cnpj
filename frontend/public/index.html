@@ -314,24 +314,26 @@
 
       <!-- ===== CONFIGURAÇÕES ===== -->
       <div id="view-config" class="view">
-        <h2 class="view-title">Configurações</h2>
-        <p class="view-desc">Personalize o nome e logotipo exibidos no topo. O acesso é feito pela <a href="#" id="cfg-login-link">tela de login</a>.</p>
+        <h2 class="view-title">Configurações de Acesso</h2>
+        <p class="view-desc">Altere as credenciais de acesso ao sistema. O acesso é feito pela <a href="#" id="cfg-login-link">tela de login</a>.</p>
         <div class="config-panels">
-          <section id="config-panel-empresa" class="config-panel is-active" role="region" aria-label="Marca">
+          <section id="config-panel-auth" class="config-panel is-active" role="region" aria-label="Autenticação">
             <div class="config-field">
-              <label for="cfg-company-name">Nome exibido ao lado do logotipo</label>
-              <input type="text" id="cfg-company-name" name="companyName" autocomplete="organization" placeholder="Ex.: Duran Ponce | Compliance" maxlength="120" />
+              <label for="cfg-username">Novo nome de usuário</label>
+              <input type="text" id="cfg-username" name="username" autocomplete="username" placeholder="Ex: admin" maxlength="50" />
             </div>
             <div class="config-field">
-              <label for="cfg-logo-file">Logotipo (PNG, JPG ou SVG)</label>
-              <input type="file" id="cfg-logo-file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" />
-              <p class="config-hint">Recomendado: imagem quadrada; será exibida em 36×36 px.</p>
+              <label for="cfg-password">Nova senha</label>
+              <input type="password" id="cfg-password" name="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" />
             </div>
-            <button type="button" class="btn-config-secondary" id="cfg-logo-clear">Restaurar logotipo padrão</button>
+            <div class="config-field">
+              <label for="cfg-password-confirm">Confirmar nova senha</label>
+              <input type="password" id="cfg-password-confirm" placeholder="Repita a nova senha" />
+            </div>
           </section>
         </div>
         <div class="config-actions">
-          <button type="button" class="btn-export" id="cfg-save">Salvar configurações</button>
+          <button type="button" class="btn-export" id="cfg-save">Salvar credenciais</button>
         </div>
       </div>
 

@@ -42,6 +42,10 @@ def init_db(db_path: Path) -> None:
                 consultado_em  TEXT NOT NULL,
                 atualizado_em  TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS usuarios (
+                username       TEXT PRIMARY KEY,
+                password       TEXT NOT NULL
+            );
             CREATE INDEX IF NOT EXISTS idx_entidades_pinned
                 ON entidades(pinned);
             CREATE INDEX IF NOT EXISTS idx_entidades_razao
@@ -49,6 +53,13 @@ def init_db(db_path: Path) -> None:
             CREATE INDEX IF NOT EXISTS idx_entidades_atualizado
                 ON entidades(atualizado_em DESC);
         """)
+    
+    # Semeia credenciais padrão se não existirem usuários
+    with _conn(db_path) as con:
+        res = con.execute("SELECT COUNT(*) as cnt FROM usuarios").fetchone()
+        if res and res["cnt"] == 0:
+            from valida_cnpj.config import APP_PASS, APP_USER
+            con.execute("INSERT INTO usuarios (username, password) VALUES (?, ?)", (APP_USER, APP_PASS))
 
 
 # ---------------------------------------------------------------------------
@@ -234,3 +245,23 @@ def search_autocomplete(
             (q, q, q, limit),
         ).fetchall()
     return [_row_to_dict(r) for r in rows]
+
+# ---------------------------------------------------------------------------
+# Autenticação
+# ---------------------------------------------------------------------------
+
+def get_credentials(db_path: Path) -> Optional[Dict[str, str]]:
+    """Retorna o primeiro usuário e senha da base."""
+    with _conn(db_path) as con:
+        row = con.execute("SELECT username, password FROM usuarios LIMIT 1").fetchone()
+        if row:
+            return {"username": row["username"], "password": row["password"]}
+    return None
+
+
+def update_credentials(db_path: Path, new_user: str, new_pass: str) -> None:
+    """Atualiza as credenciais. Assume que existe apenas um par usuário/senha global."""
+    with _conn(db_path) as con:
+        # Pega o atual para o WHERE, se existir, ou apenas limpa e insere
+        con.execute("DELETE FROM usuarios")
+        con.execute("INSERT INTO usuarios (username, password) VALUES (?, ?)", (new_user, new_pass))

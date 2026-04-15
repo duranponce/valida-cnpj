@@ -60,6 +60,31 @@ def api_auth_logout():
     return redirect(url_for("web.login_page"))
 
 
+@api_bp.route("/auth/update", methods=["POST", "OPTIONS"])
+def api_auth_update():
+    """Atualiza usuário e senha no banco."""
+    if request.method == "OPTIONS":
+        return "", 204
+    u = session.get("user")
+    if not u:
+        return jsonify({"error": "Não autorizado."}), 401
+    
+    body = request.get_json(silent=True) or {}
+    new_user = str(body.get("username") or "").strip()
+    new_pass = body.get("password")
+    
+    if not new_user or not new_pass:
+        return jsonify({"error": "Usuário e senha são obrigatórios."}), 400
+        
+    try:
+        db_svc.update_credentials(DB_PATH, new_user, new_pass)
+        # Limpa sessão para forçar re-login com novas credenciais
+        session.clear()
+        return jsonify({"ok": True, "message": "Credenciais atualizadas. Faça login novamente."})
+    except Exception as e:
+        return jsonify({"error": f"Erro ao atualizar: {str(e)}"}), 500
+
+
 # ---------------------------------------------------------------------------
 # CNPJ proxy (ReceitaWS)
 # ---------------------------------------------------------------------------

@@ -12,7 +12,9 @@ from valida_cnpj.config import (
     FRONTEND_CSS,
     FRONTEND_JS,
     FRONTEND_PUBLIC,
+    DB_PATH,
 )
+from valida_cnpj.services import database as db_svc
 from valida_cnpj.services.pdf_upload import save_pdf_arquivados_response
 
 
@@ -31,7 +33,9 @@ def login_page():
         return send_from_directory(str(FRONTEND_PUBLIC), "login.html")
     user = (request.form.get("username") or "").strip()
     pw = request.form.get("password") or ""
-    if user == APP_USER and pw == APP_PASS:
+    
+    creds = db_svc.get_credentials(DB_PATH)
+    if creds and user == creds["username"] and pw == creds["password"]:
         session["user"] = user
         return redirect(url_for("web.dashboard_page"))
     return redirect(url_for("web.login_page", err=1))
