@@ -23,3 +23,7 @@ arquivados/*.pdf
 
 # Excel artifacts from reference script
 *.xlsx
+
+# Temporary test databases
+*.sqlite
+test_db*
