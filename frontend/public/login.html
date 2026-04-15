@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="system">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="application-root" content="" />
+  <meta name="api-base" content="" />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <title>Entrar — Duran Ponce | Compliance</title>
+  <link rel="stylesheet" href="" id="app-css" />
+  <script>
+    (function () {
+      function normalizeApiOrigin(base) {
+        if (!base) return "";
+        base = String(base).trim().replace(/\/+$/, "");
+        if (base.toLowerCase().endsWith("/api")) base = base.slice(0, -4);
+        return base;
+      }
+      function metaApiBase() {
+        var m = document.querySelector('meta[name="api-base"]');
+        if (m) {
+          var c = (m.getAttribute("content") || "").trim();
+          if (c) return normalizeApiOrigin(c);
+        }
+        try {
+          if (typeof localStorage !== "undefined") {
+            var o = localStorage.getItem("apiBaseOverride");
+            if (o) return normalizeApiOrigin(o);
+          }
+        } catch (e) {}
+        try {
+          var port = window.location.port;
+          var host = window.location.hostname;
+          if (port && port !== "5000" && (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]")) {
+            var h = host.indexOf(":") >= 0 && !host.startsWith("[") ? "[" + host + "]" : host;
+            return normalizeApiOrigin(window.location.protocol + "//" + h + ":5000");
+          }
+        } catch (e2) {}
+        return "";
+      }
+      function joinUrl(base, path) {
+        var p = path == null ? "/" : String(path);
+        if (!p || p.charAt(0) !== "/") p = "/" + p.replace(/^\/+/, "");
+        var b = base == null ? "" : String(base).trim().replace(/\/+$/, "");
+        if (!b) {
+          try {
+            if (window.location && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+              b = window.location.origin;
+            } else {
+              return p;
+            }
+          } catch (e0) {
+            return p;
+          }
+        }
+        var joined = b + p;
+        var mm = joined.match(/^(https?:\/\/[^/]+)(.*)$/i);
+        if (mm) return mm[1] + mm[2].replace(/\/{2,}/g, "/");
+        return joined.replace(/\/{2,}/g, "/");
+      }
+      function appRoot() {
+        var m = document.querySelector('meta[name="application-root"]');
+        var x = ((m && m.getAttribute("content")) || "").trim().replace(/\/+$/, "");
+        if (!x || x === "/") return "";
+        return x.charAt(0) === "/" ? x : "/" + x;
+      }
+      var link = document.getElementById("app-css");
+      if (link) link.href = joinUrl(metaApiBase(), "/css/estilos.css");
+    })();
+  </script>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark" || t === "system") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body class="login-body">
+  <main class="login-card-wrap">
+    <div class="login-card">
+      <div class="login-logo-wrap">
+        <img src="/logo.png" alt="Logotipo" class="login-logo-img" decoding="async" />
+      </div>
+      <h1 class="login-title">Duran Ponce | Compliance</h1>
+      <p class="login-lead">Sistema de Auditoria e Compliance</p>
+      <form class="login-form" id="login-form" method="post" action="" autocomplete="on">
+        <label for="login-user">Usuário</label>
+        <input id="login-user" name="username" type="text" required autocomplete="username" />
+        <label for="login-pass">Senha</label>
+        <input id="login-pass" name="password" type="password" required autocomplete="current-password" />
+        <p id="login-err" class="login-err hidden" role="alert">Usuário ou senha incorretos.</p>
+        <button type="submit" class="btn-export login-submit">Entrar</button>
+      </form>
+    </div>
+  </main>
+  <script>
+    (function () {
+      function appRoot() {
+        var m = document.querySelector('meta[name="application-root"]');
+        var x = ((m && m.getAttribute("content")) || "").trim().replace(/\/+$/, "");
+        if (!x || x === "/") return "";
+        return x.charAt(0) === "/" ? x : "/" + x;
+      }
+      function pagePath(p) {
+        var root = appRoot();
+        p = p.charAt(0) === "/" ? p : "/" + p;
+        return root ? root + p : p;
+      }
+      var f = document.getElementById("login-form");
+      if (f) f.setAttribute("action", pagePath("/login"));
+      var lo = document.querySelector(".login-logo-img");
+      if (lo) lo.src = pagePath("/logo.png");
+      var ic = document.querySelector('link[rel="icon"]');
+      if (ic) ic.href = pagePath("/logo.png");
+      if (window.location.search.indexOf("err=1") !== -1) {
+        var e = document.getElementById("login-err");
+        if (e) e.classList.remove("hidden");
+      }
+    })();
+  </script>
+</body>
+</html>

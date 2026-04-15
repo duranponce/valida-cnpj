@@ -1,0 +1,15 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../data:/app/data
+      - ../exportados:/app/exportados
+      - ../arquivados:/app/arquivados
+    environment:
+      DATA_DIR: /app/data
+      EXPORTADOS_DIR: /app/exportados
+      ARQUIVADOS_DIR: /app/arquivados

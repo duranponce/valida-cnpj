@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="system">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Prefixo se o app estiver atrás de subpasta (ex.: /valida). Vazio = raiz do site. -->
+  <meta name="application-root" content="" />
+  <!-- Deixe vazio se abrir pelo Flask (python app.py). Se abrir em outra porta, use: http://127.0.0.1:5000 -->
+  <meta name="api-base" content="" />
+  <meta name="description" content="Duran Ponce | Compliance — Sistema avançado de auditoria, validação e enriquecimento de dados cadastrais." />
+  <link rel="icon" href="/logo.png" type="image/png" />
+  <title>Duran Ponce | Compliance</title>
+  <link rel="stylesheet" href="" id="app-css" />
+  <script>
+    (function () {
+      function normalizeApiOrigin(base) {
+        if (!base) return "";
+        base = String(base).trim().replace(/\/+$/, "");
+        if (base.toLowerCase().endsWith("/api")) base = base.slice(0, -4);
+        return base;
+      }
+      function metaApiBase() {
+        var m = document.querySelector('meta[name="api-base"]');
+        if (m) {
+          var c = (m.getAttribute("content") || "").trim();
+          if (c) return normalizeApiOrigin(c);
+        }
+        try {
+          if (typeof localStorage !== "undefined") {
+            var o = localStorage.getItem("apiBaseOverride");
+            if (o) return normalizeApiOrigin(o);
+          }
+        } catch (e) {}
+        try {
+          var port = window.location.port;
+          var host = window.location.hostname;
+          if (port && port !== "5000" && (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]")) {
+            var h = host.indexOf(":") >= 0 && !host.startsWith("[") ? "[" + host + "]" : host;
+            return normalizeApiOrigin(window.location.protocol + "//" + h + ":5000");
+          }
+        } catch (e2) {}
+        return "";
+      }
+      function joinUrl(base, path) {
+        var p = path == null ? "/" : String(path);
+        if (!p || p.charAt(0) !== "/") p = "/" + p.replace(/^\/+/, "");
+        var b = base == null ? "" : String(base).trim().replace(/\/+$/, "");
+        if (!b) {
+          try {
+            if (window.location && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+              b = window.location.origin;
+            } else {
+              return p;
+            }
+          } catch (e0) { return p; }
+        }
+        var joined = b + p;
+        var mm = joined.match(/^(https?:\/\/[^/]+)(.*)$/i);
+        if (mm) return mm[1] + mm[2].replace(/\/{2,}/g, "/");
+        return joined.replace(/\/{2,}/g, "/");
+      }
+      var link = document.getElementById("app-css");
+      if (link) link.href = joinUrl(metaApiBase(), "/css/estilos.css");
+    })();
+  </script>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("theme");
+        if (t === "light" || t === "dark" || t === "system") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <header class="topbar" role="banner">
+    <a class="topbar-logo" href="#" id="logo-home" aria-label="Duran Ponce | Compliance — Painel">
+      <span class="topbar-logo-mark" id="topbar-logo-mark" aria-hidden="true">
+        <img id="topbar-logo-img" class="topbar-logo-img" src="/logo.png" alt="" width="36" height="36" />
+        <svg id="topbar-logo-svg" class="hidden" width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="2" y="2" width="36" height="36" rx="10" stroke="currentColor" stroke-width="1.65" />
+          <path d="M10 28V14h8v14" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M18 14h12v14.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          <path d="M13 18h2M13 22h2M13 26h2" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" />
+          <path d="M21 18h7M21 22h7M21 27h7" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" />
+          <path d="M26 8l2.5 3L34 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <span class="topbar-logo-text" id="topbar-app-title">Duran Ponce | Compliance</span>
+    </a>
+    <div class="topbar-center">
+      <label class="visually-hidden" for="topbar-filter">Filtrar consultas salvas</label>
+      <input type="search" id="topbar-filter" class="topbar-filter" placeholder="Filtrar por CNPJ ou nome…" autocomplete="off" />
+    </div>
+    <div class="topbar-right">
+      <button type="button" class="theme-cycle-btn" id="theme-cycle" aria-label="Tema: seguir sistema">
+        <span class="theme-cycle-icon" id="theme-cycle-icon" aria-hidden="true"></span>
+        <span class="theme-cycle-label" id="theme-cycle-label">Sistema</span>
+      </button>
+      <button type="button" class="topbar-logout" id="topbar-logout">Sair</button>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <nav class="sidebar-nav" role="navigation">
+        <!-- Principal -->
+        <button type="button" class="sidebar-link is-active" data-view="dashboard" aria-current="page">
+          <span class="sidebar-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </span>
+          Painel
+        </button>
+        <button type="button" class="sidebar-link" data-view="consulta">
+          <span class="sidebar-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </span>
+          Consulta
+        </button>
+        <button type="button" class="sidebar-link" data-view="salvas">
+          <span class="sidebar-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </span>
+          Consultas Salvas
+        </button>
+        <button type="button" class="sidebar-link" data-view="enriquecimento">
+          <span class="sidebar-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </span>
+          Enriquecimento
+        </button>
+        <button type="button" class="sidebar-link" data-view="arquivados">
+          <span class="sidebar-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+            </svg>
+          </span>
+          Arquivados
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <button type="button" class="sidebar-link sidebar-link-footer" data-view="config">
+          <span class="sidebar-icon" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+            </svg>
+          </span>
+          Configurações
+        </button>
+      </div>
+    </aside>
+
+    <div class="main-column">
+
+      <!-- ===== PAINEL ===== -->
+      <div id="view-dashboard" class="view is-active">
+        <h2 class="view-title">Painel</h2>
+        <p class="view-desc">Resumo das consultas registradas e arquivos no servidor.</p>
+        <div id="dash-loading" class="dash-loading" role="status">Calculando…</div>
+        <div id="dash-content" class="dash-grid hidden">
+          <section class="dash-card" aria-labelledby="dash-total-title">
+            <h3 id="dash-total-title" class="dash-card-title">Consultas realizadas</h3>
+            <p class="dash-card-value" id="dash-consultas-total">—</p>
+            <p class="dash-card-hint">Total de consultas bem-sucedidas no servidor.</p>
+          </section>
+          <section class="dash-card" aria-labelledby="dash-arq-title">
+            <h3 id="dash-arq-title" class="dash-card-title">Arquivos arquivados</h3>
+            <p class="dash-card-value" id="dash-arquivados-total">—</p>
+            <p class="dash-card-hint">PDFs na pasta <code>arquivados/</code> no servidor.</p>
+          </section>
+          <section class="dash-card dash-card-wide" aria-labelledby="dash-dates-title">
+            <h3 id="dash-dates-title" class="dash-card-title">Últimas consultas</h3>
+            <ul class="dash-dates" id="dash-ultimas"></ul>
+          </section>
+        </div>
+      </div>
+
+      <!-- ===== CONSULTA ===== -->
+      <div id="view-consulta" class="view view-consulta">
+        <p class="page-lead">Consulta via ReceitaWS — fixe o resultado para salvar nas Consultas Salvas.</p>
+
+        <div id="consulta-split" class="consulta-split">
+          <div class="consulta-form-col">
+            <section class="panel panel-form" aria-labelledby="form-heading">
+              <h2 id="form-heading">Consulta de CNPJ</h2>
+              <form id="form-consulta" novalidate>
+                <label for="cnpj">CNPJ</label>
+                <div class="form-row">
+                  <div class="autocomplete-wrap">
+                    <input
+                      id="cnpj"
+                      name="cnpj"
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      placeholder="00.000.000/0001-00"
+                      maxlength="18"
+                      required
+                      aria-autocomplete="list"
+                      aria-controls="cnpj-autocomplete"
+                      aria-expanded="false"
+                    />
+                    <ul
+                      id="cnpj-autocomplete"
+                      class="autocomplete-dropdown"
+                      role="listbox"
+                      aria-label="Sugestões de CNPJ"
+                      hidden
+                    ></ul>
+                  </div>
+                  <button type="submit" id="btn-consultar">Consultar</button>
+                </div>
+              </form>
+              <p id="mensagem" class="mensagem" role="status" aria-live="polite"></p>
+            </section>
+
+            <section id="panel-export" class="panel panel-export hidden" aria-labelledby="export-heading">
+              <h2 id="export-heading" class="export-heading">Ações</h2>
+              <p class="export-hint">Fixe o CNPJ para salvar em Consultas Salvas ou exporte como PDF.</p>
+              <div class="export-actions">
+                <button type="button" id="btn-pin" class="btn-pin" aria-pressed="false">
+                  <svg class="btn-pin-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 2v10M12 22v-4M8.5 6.5l7 0M5 12h14"/>
+                    <line x1="12" y1="12" x2="12" y2="20"/>
+                    <path d="M8 3h8a1 1 0 0 1 1 1v5a5 5 0 0 1-10 0V4a1 1 0 0 1 1-1z"/>
+                  </svg>
+                  <span id="btn-pin-label">Fixar consulta</span>
+                </button>
+                <button type="button" id="btn-exportar" class="btn-export" disabled>Exportar PDF</button>
+              </div>
+            </section>
+          </div>
+
+          <div class="consulta-results-col">
+            <div id="resultados-wrap" class="resultados-wrap hidden" aria-live="polite">
+              <nav class="tab-bar" role="tablist" aria-label="Resultados da consulta">
+                <button type="button" class="tab" role="tab" id="tab-cadastro" aria-selected="true" aria-controls="panel-cadastro" tabindex="0">Cadastro</button>
+                <button type="button" class="tab" role="tab" id="tab-quadro" aria-selected="false" aria-controls="panel-quadro" tabindex="-1">Quadro societário</button>
+                <button type="button" class="tab" role="tab" id="tab-atividades" aria-selected="false" aria-controls="panel-atividades" tabindex="-1">Atividades</button>
+                <button type="button" class="tab" role="tab" id="tab-endereco" aria-selected="false" aria-controls="panel-endereco" tabindex="-1">Endereço</button>
+              </nav>
+              <div class="tab-panels">
+                <section id="panel-cadastro" class="panel panel-resultado tab-panel is-active" role="tabpanel" aria-labelledby="tab-cadastro">
+                  <h2 class="visually-hidden">Cadastro</h2>
+                  <div id="out-cadastro" class="table-wrap"></div>
+                </section>
+                <section id="panel-quadro" class="panel panel-resultado tab-panel" role="tabpanel" aria-labelledby="tab-quadro">
+                  <h2 class="visually-hidden">Quadro societário</h2>
+                  <div id="out-quadro" class="table-wrap"></div>
+                </section>
+                <section id="panel-atividades" class="panel panel-resultado tab-panel" role="tabpanel" aria-labelledby="tab-atividades">
+                  <h2 class="visually-hidden">Atividades</h2>
+                  <div id="out-atividades" class="table-wrap"></div>
+                </section>
+                <section id="panel-endereco" class="panel panel-resultado tab-panel" role="tabpanel" aria-labelledby="tab-endereco">
+                  <h2 class="visually-hidden">Endereço (ViaCEP)</h2>
+                  <div id="out-endereco" class="table-wrap"></div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CONSULTAS SALVAS ===== -->
+      <div id="view-salvas" class="view">
+        <h2 class="view-title">Consultas Salvas</h2>
+        <p class="view-desc">CNPJs fixados manualmente (📌) aparecem aqui para acesso rápido.</p>
+        <div id="lista-salvas" class="lista-cards"></div>
+      </div>
+
+      <!-- ===== ENRIQUECIMENTO ===== -->
+      <div id="view-enriquecimento" class="view">
+        <h2 class="view-title">Enriquecimento</h2>
+        <p class="view-desc">Atualize os dados das entidades fixadas consultando novamente a ReceitaWS.</p>
+
+        <div class="enriquecimento-toolbar">
+          <button type="button" id="btn-enriquecer" class="btn-export">
+            Enriquecer tudo
+          </button>
+          <button type="button" id="btn-enriquecer-refresh" class="btn-secondary">
+            Atualizar lista
+          </button>
+        </div>
+
+        <div id="enriquecimento-progress" class="enriquecimento-progress hidden">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="enriquecimento-bar" style="width:0%"></div>
+          </div>
+          <p id="enriquecimento-status-text" class="enriquecimento-status-text">Aguardando…</p>
+        </div>
+
+        <div id="enriquecimento-list" class="enriquecimento-list"></div>
+      </div>
+
+      <!-- ===== ARQUIVADOS ===== -->
+      <div id="view-arquivados" class="view">
+        <h2 class="view-title">Arquivados</h2>
+        <p class="view-desc">
+          PDFs da exportação <strong>Local</strong>: pasta <code>arquivados/</code> no servidor; caso contrário ficam guardados <strong>neste navegador</strong> (IndexedDB).
+        </p>
+        <div id="lista-arquivados" class="file-list-wrap"></div>
+      </div>
+
+      <!-- ===== CONFIGURAÇÕES ===== -->
+      <div id="view-config" class="view">
+        <h2 class="view-title">Configurações</h2>
+        <p class="view-desc">Personalize o nome e logotipo exibidos no topo. O acesso é feito pela <a href="#" id="cfg-login-link">tela de login</a>.</p>
+        <div class="config-panels">
+          <section id="config-panel-empresa" class="config-panel is-active" role="region" aria-label="Marca">
+            <div class="config-field">
+              <label for="cfg-company-name">Nome exibido ao lado do logotipo</label>
+              <input type="text" id="cfg-company-name" name="companyName" autocomplete="organization" placeholder="Ex.: Duran Ponce | Compliance" maxlength="120" />
+            </div>
+            <div class="config-field">
+              <label for="cfg-logo-file">Logotipo (PNG, JPG ou SVG)</label>
+              <input type="file" id="cfg-logo-file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" />
+              <p class="config-hint">Recomendado: imagem quadrada; será exibida em 36×36 px.</p>
+            </div>
+            <button type="button" class="btn-config-secondary" id="cfg-logo-clear">Restaurar logotipo padrão</button>
+          </section>
+        </div>
+        <div class="config-actions">
+          <button type="button" class="btn-export" id="cfg-save">Salvar configurações</button>
+        </div>
+      </div>
+
+      <footer class="page-footer">
+        <p>Servidor: <code>python app.py</code> — PDFs exportados ficam em <code>arquivados/</code>.</p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Modal: Exportar PDF -->
+  <div id="modal-export" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-export-title" hidden>
+    <div class="modal-card">
+      <h2 id="modal-export-title" class="modal-title">Exportar PDF</h2>
+      <p class="modal-text">Onde deseja salvar o arquivo?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal btn-modal-primary" id="modal-export-externo">Externo (baixar)</button>
+        <button type="button" class="btn-modal btn-modal-primary" id="modal-export-local">Local (salvar em Arquivados)</button>
+        <button type="button" class="btn-modal btn-modal-ghost" id="modal-export-cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-edit-entidade" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-edit-entidade-title" hidden>
+    <div class="modal-card modal-card-wide">
+      <h2 id="modal-edit-entidade-title" class="modal-title">Editar entidade</h2>
+      <p id="modal-edit-entidade-hint" class="modal-text">Altere os campos e salve para atualizar o cadastro local (SQLite).</p>
+      <form id="form-edit-entidade" class="modal-entidade-form" autocomplete="off">
+        <div class="config-field">
+          <label for="enr-edit-cnpj">CNPJ</label>
+          <input type="text" id="enr-edit-cnpj" readonly />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-razao_social">Razão social / nome</label>
+          <input type="text" id="enr-edit-razao_social" name="razao_social" maxlength="200" />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-fantasia">Nome fantasia</label>
+          <input type="text" id="enr-edit-fantasia" name="fantasia" maxlength="200" />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-situacao">Situação cadastral</label>
+          <input type="text" id="enr-edit-situacao" name="situacao" maxlength="120" />
+        </div>
+        <div class="config-field modal-entidade-row-2">
+          <div>
+            <label for="enr-edit-cep">CEP</label>
+            <input type="text" id="enr-edit-cep" name="cep" maxlength="20" />
+          </div>
+          <div>
+            <label for="enr-edit-uf">UF</label>
+            <input type="text" id="enr-edit-uf" name="uf" maxlength="2" />
+          </div>
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-municipio">Município</label>
+          <input type="text" id="enr-edit-municipio" name="municipio" maxlength="120" />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-data_abertura">Data de abertura</label>
+          <input type="text" id="enr-edit-data_abertura" name="data_abertura" maxlength="40" placeholder="Ex.: 01/01/2000 ou 2000-01-01" />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-telefone">Telefone</label>
+          <input type="text" id="enr-edit-telefone" name="telefone" maxlength="80" />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-email">E-mail</label>
+          <input type="text" id="enr-edit-email" name="email" maxlength="200" />
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-logradouro">Logradouro</label>
+          <input type="text" id="enr-edit-logradouro" name="logradouro" maxlength="200" />
+        </div>
+        <div class="config-field modal-entidade-row-2">
+          <div>
+            <label for="enr-edit-numero">Número</label>
+            <input type="text" id="enr-edit-numero" name="numero" maxlength="30" />
+          </div>
+          <div>
+            <label for="enr-edit-complemento">Complemento</label>
+            <input type="text" id="enr-edit-complemento" name="complemento" maxlength="120" />
+          </div>
+        </div>
+        <div class="config-field">
+          <label for="enr-edit-bairro">Bairro</label>
+          <input type="text" id="enr-edit-bairro" name="bairro" maxlength="120" />
+        </div>
+        <div class="modal-entidade-actions">
+          <button type="submit" class="btn-modal btn-modal-primary" id="modal-edit-entidade-save">Salvar</button>
+          <button type="button" class="btn-modal btn-modal-ghost" id="modal-edit-entidade-cancel">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-preview-pdf" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-preview-pdf-title" hidden>
+    <div class="modal-card modal-card-preview">
+      <div class="modal-preview-header">
+        <h2 id="modal-preview-pdf-title" class="modal-title">Visualizar PDF</h2>
+        <button type="button" class="btn-close-preview" id="modal-preview-pdf-close" aria-label="Fechar visualização">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-preview-body">
+        <iframe id="iframe-preview-pdf" src="" frameborder="0" title="Visualização do PDF"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    (function () {
+      function normalizeApiOrigin(base) {
+        if (!base) return "";
+        base = String(base).trim().replace(/\/+$/, "");
+        if (base.toLowerCase().endsWith("/api")) base = base.slice(0, -4);
+        return base;
+      }
+      function metaApiBase() {
+        var m = document.querySelector('meta[name="api-base"]');
+        if (m) {
+          var c = (m.getAttribute("content") || "").trim();
+          if (c) return normalizeApiOrigin(c);
+        }
+        try {
+          if (typeof localStorage !== "undefined") {
+            var o = localStorage.getItem("apiBaseOverride");
+            if (o) return normalizeApiOrigin(o);
+          }
+        } catch (e) {}
+        try {
+          var port = window.location.port;
+          var host = window.location.hostname;
+          if (port && port !== "5000" && (host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]")) {
+            var h = host.indexOf(":") >= 0 && !host.startsWith("[") ? "[" + host + "]" : host;
+            return normalizeApiOrigin(window.location.protocol + "//" + h + ":5000");
+          }
+        } catch (e2) {}
+        return "";
+      }
+      function joinUrl(base, path) {
+        var p = path == null ? "/" : String(path);
+        if (!p || p.charAt(0) !== "/") p = "/" + p.replace(/^\/+/, "");
+        var b = base == null ? "" : String(base).trim().replace(/\/+$/, "");
+        if (!b) {
+          try {
+            if (window.location && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+              b = window.location.origin;
+            } else { return p; }
+          } catch (e0) { return p; }
+        }
+        var joined = b + p;
+        var mm = joined.match(/^(https?:\/\/[^/]+)(.*)$/i);
+        if (mm) return mm[1] + mm[2].replace(/\/{2,}/g, "/");
+        return joined.replace(/\/{2,}/g, "/");
+      }
+      var s = document.createElement("script");
+      s.src = joinUrl(metaApiBase(), "/js/app.js");
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

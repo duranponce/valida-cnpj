@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Windows
+desktop.ini
+Thumbs.db
+
+# Project Specific
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/consultas_log.json
+exportados/*.pdf
+arquivados/*.pdf
+!exportados/.gitkeep
+!arquivados/.gitkeep
+
+# Excel artifacts from reference script
+*.xlsx
