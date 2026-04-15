@@ -1441,12 +1441,22 @@
       doc.setTextColor(255, 255, 255);
       const brandName = (loadSettings().companyName || "Duran Ponce | Compliance").trim();
       
-      // Tentar desenhar o logo se estiver carregado
+      const textX = window._cachedLogoBase64 ? marginX + 40 : marginX;
+
+      // Desenhar o logo se estiver carregado
       if (window._cachedLogoBase64) {
         doc.addImage(window._cachedLogoBase64, "PNG", marginX, 22, 30, 30);
-        doc.text(brandName, marginX + 40, 42);
-      } else {
-        doc.text(brandName, marginX, 42);
+      }
+      
+      doc.text(brandName, textX, 40);
+
+      // Subtítulo: Razão Social
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(200, 203, 210); // Branco levemente acinzentado
+      const razaoSocial = (data.nome || "").trim();
+      if (razaoSocial) {
+        doc.text(razaoSocial, textX, 55, { maxWidth: pageWidth - marginX - 160 });
       }
       
       // Metadados direita (Data e CNPJ)
