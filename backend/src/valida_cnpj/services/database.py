@@ -54,13 +54,6 @@ def init_db(db_path: Path) -> None:
                 ON entidades(atualizado_em DESC);
         """)
     
-    # Semeia credenciais padrão se não existirem usuários
-    with _conn(db_path) as con:
-        res = con.execute("SELECT COUNT(*) as cnt FROM usuarios").fetchone()
-        if res and res["cnt"] == 0:
-            from valida_cnpj.config import APP_PASS, APP_USER
-            con.execute("INSERT INTO usuarios (username, password) VALUES (?, ?)", (APP_USER, APP_PASS))
-
 
 # ---------------------------------------------------------------------------
 # Escrita

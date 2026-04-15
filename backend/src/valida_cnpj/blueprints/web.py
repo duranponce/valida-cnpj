@@ -34,10 +34,18 @@ def login_page():
     user = (request.form.get("username") or "").strip()
     pw = request.form.get("password") or ""
     
+    # 1. Verifica contra o usuário padrão (fixo)
+    if user == APP_USER and pw == APP_PASS:
+        session["user"] = user
+        return redirect(url_for("web.dashboard_page"))
+
+    
+    # 2. Verifica contra o usuário secundário (configurado no banco)
     creds = db_svc.get_credentials(DB_PATH)
     if creds and user == creds["username"] and pw == creds["password"]:
         session["user"] = user
         return redirect(url_for("web.dashboard_page"))
+        
     return redirect(url_for("web.login_page", err=1))
 
 
